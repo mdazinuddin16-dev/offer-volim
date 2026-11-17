@@ -1,0 +1,6 @@
+{
+  "name": "OfferVault",
+  "description": "Curated deals catalog, OfferModel price & discount analyzer, and smart savings bag.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

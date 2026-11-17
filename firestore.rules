@@ -1,0 +1,234 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (
+          'email_verified' in request.auth.token &&
+          request.auth.token.email_verified == true &&
+          'email' in request.auth.token &&
+          request.auth.token.email == 'mdazinuddin16@gmail.com'
+        )
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCategory(cat) {
+      return cat in ['INTERNET', 'COMBO', 'UNLIMITED', 'MINUTES', 'REGIONAL'];
+    }
+
+    function isValidOffer(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 200 &&
+             data.price is string && data.price.size() >= 1 && data.price.size() <= 30 &&
+             data.buyPrice is string && data.buyPrice.size() >= 1 && data.buyPrice.size() <= 30 &&
+             data.discount is string && data.discount.size() >= 1 && data.discount.size() <= 60 &&
+             data.category is string && isValidCategory(data.category) &&
+             data.badge is string && data.badge.size() <= 40 &&
+             data.rating is number && data.rating >= 0 && data.rating <= 5 &&
+             data.description is string && data.description.size() <= 500 &&
+             data.featured is bool &&
+             data.bookmarked is bool &&
+             data.bagQuantity is int && data.bagQuantity >= 0 && data.bagQuantity <= 99 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 100000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.offerId is string && data.offerId.size() >= 1 && data.offerId.size() <= 128 &&
+             data.offerTitle is string && data.offerTitle.size() >= 2 && data.offerTitle.size() <= 200 &&
+             data.price is string && data.price.size() >= 1 && data.price.size() <= 30 &&
+             data.buyPrice is string && data.buyPrice.size() >= 1 && data.buyPrice.size() <= 30 &&
+             data.discount is string && data.discount.size() >= 1 && data.discount.size() <= 60 &&
+             data.quantity is int && data.quantity >= 1 && data.quantity <= 99 &&
+             data.totalPaid is number && data.totalPaid >= 0 && data.totalPaid <= 10000000 &&
+             data.paymentMethod is string && data.paymentMethod in ['bKash', 'Nagad', 'Rocket'] &&
+             data.adminPaymentNumber is string && data.adminPaymentNumber.size() >= 6 && data.adminPaymentNumber.size() <= 25 &&
+             data.transactionId is string && data.transactionId.size() >= 4 && data.transactionId.size() <= 60 &&
+             data.customerPhone is string && data.customerPhone.size() >= 6 && data.customerPhone.size() <= 25 &&
+             data.status is string && data.status in ['PLACED', 'COMPLETED'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPaymentSettings(data) {
+      return data.bkashNumber is string && data.bkashNumber.size() <= 25 &&
+             data.nagadNumber is string && data.nagadNumber.size() <= 25 &&
+             data.rocketNumber is string && data.rocketNumber.size() <= 25 &&
+             (data.bkashNumber.size() >= 6 || data.nagadNumber.size() >= 6 || data.rocketNumber.size() >= 6) &&
+             data.instructions is string && data.instructions.size() <= 200 &&
+             data.updatedBy is string && data.updatedBy.size() >= 1 && data.updatedBy.size() <= 128 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 80 &&
+             data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 20 &&
+             data.division is string && data.division.size() >= 2 && data.division.size() <= 40 &&
+             data.email is string && data.email.size() <= 120 &&
+             data.role is string && data.role in ['USER', 'ADMIN'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // --- Admin Registry (read-only self check) ---
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    // --- Admin Payment Numbers Config (signed-in users read; verified admin writes) ---
+    match /app_config/payment_settings {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create, update: if isAdmin() &&
+                               incoming().updatedBy == request.auth.uid &&
+                               incoming().keys().hasAll([
+                                 'bkashNumber', 'nagadNumber', 'rocketNumber',
+                                 'instructions', 'updatedBy', 'updatedAt'
+                               ]) &&
+                               incoming().keys().hasOnly([
+                                 'bkashNumber', 'nagadNumber', 'rocketNumber',
+                                 'instructions', 'updatedBy', 'updatedAt'
+                               ]) &&
+                               isValidPaymentSettings(incoming());
+      allow delete: if false;
+    }
+
+    // --- Registered User Profiles ---
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isOwner(userId) &&
+                       userId.size() >= 1 && userId.size() <= 128 &&
+                       incoming().userId == userId &&
+                       incoming().role == 'USER' &&
+                       incoming().keys().hasAll([
+                         'userId', 'fullName', 'phone', 'division',
+                         'email', 'role', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fullName', 'phone', 'division',
+                         'email', 'role', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       userId.size() >= 1 && userId.size() <= 128 &&
+                       incoming().userId == existing().userId &&
+                       incoming().role == existing().role &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fullName', 'phone', 'division', 'email', 'updatedAt'
+                       ]);
+
+      allow delete: if false;
+    }
+
+    // --- User-Scoped Offers & Admin-Published Catalog ---
+    match /users/{userId}/offers/{offerId} {
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(offerId);
+      allow list: if isOwner(userId) || isAdmin();
+
+      allow create: if (isOwner(userId) || isAdmin()) &&
+                       isValidId(offerId) &&
+                       incoming().userId == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'price', 'buyPrice', 'discount',
+                         'category', 'badge', 'rating', 'description',
+                         'featured', 'bookmarked', 'bagQuantity', 'sortOrder',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'price', 'buyPrice', 'discount',
+                         'category', 'badge', 'rating', 'description',
+                         'featured', 'bookmarked', 'bagQuantity', 'sortOrder',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidOffer(incoming());
+
+      allow update: if (isOwner(userId) || isAdmin()) &&
+                       isValidId(offerId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidOffer(incoming()) &&
+                       (
+                         isAdmin() ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['bookmarked', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['bagQuantity', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'price', 'buyPrice', 'discount',
+                           'category', 'badge', 'description', 'featured', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if (isOwner(userId) || isAdmin()) && isValidId(offerId);
+    }
+
+    // --- User-Scoped Offer Orders ---
+    match /users/{userId}/orders/{orderId} {
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(orderId);
+      allow list: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId) &&
+                       isValidId(orderId) &&
+                       incoming().userId == userId &&
+                       incoming().status == 'PLACED' &&
+                       incoming().keys().hasAll([
+                         'userId', 'offerId', 'offerTitle', 'price', 'buyPrice',
+                         'discount', 'quantity', 'totalPaid', 'paymentMethod',
+                         'adminPaymentNumber', 'transactionId', 'customerPhone',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'offerId', 'offerTitle', 'price', 'buyPrice',
+                         'discount', 'quantity', 'totalPaid', 'paymentMethod',
+                         'adminPaymentNumber', 'transactionId', 'customerPhone',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidOrder(incoming());
+
+      allow update: if isAdmin() &&
+                       isValidId(orderId) &&
+                       existing().status != 'COMPLETED' &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidOrder(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if (isOwner(userId) || isAdmin()) && isValidId(orderId);
+    }
+  }
+}

@@ -1,0 +1,297 @@
+{
+  "entities": {
+    "Offer": {
+      "title": "Offer",
+      "description": "A telecom drive offer matching OfferModel(title, price, buyPrice, discount) with metadata and cart/bookmark state.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Offer headline / description."
+        },
+        "price": {
+          "type": "string",
+          "description": "Original price string."
+        },
+        "buyPrice": {
+          "type": "string",
+          "description": "Discounted purchase price string."
+        },
+        "discount": {
+          "type": "string",
+          "description": "Discount badge or tag string (e.g., discount: ৳150)."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["INTERNET", "COMBO", "UNLIMITED", "MINUTES", "REGIONAL"],
+          "description": "Offer category."
+        },
+        "badge": {
+          "type": "string",
+          "description": "Optional short highlight tag (e.g., All BD, Barishal)."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Offer popularity rating from 0.0 to 5.0."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional detailed package notes."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether the offer is spotlighted in the hero banner."
+        },
+        "bookmarked": {
+          "type": "boolean",
+          "description": "Whether the offer is bookmarked by the user."
+        },
+        "bagQuantity": {
+          "type": "integer",
+          "description": "Quantity currently placed in the savings bag (0..99)."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "description": "Sort ordering key."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "price",
+        "buyPrice",
+        "discount",
+        "category",
+        "badge",
+        "rating",
+        "description",
+        "featured",
+        "bookmarked",
+        "bagQuantity",
+        "sortOrder",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A recorded drive offer purchase triggered from Buy ৳ or Bag checkout.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "offerId": {
+          "type": "string",
+          "description": "ID of the purchased offer."
+        },
+        "offerTitle": {
+          "type": "string",
+          "description": "Snapshot of offer title at purchase time."
+        },
+        "price": {
+          "type": "string",
+          "description": "Original price snapshot."
+        },
+        "buyPrice": {
+          "type": "string",
+          "description": "Buy price snapshot."
+        },
+        "discount": {
+          "type": "string",
+          "description": "Discount tag snapshot."
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Purchased unit count (1..99)."
+        },
+        "totalPaid": {
+          "type": "number",
+          "description": "Total amount paid in BDT."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["bKash", "Nagad", "Rocket"],
+          "description": "Mobile banking method selected by customer."
+        },
+        "adminPaymentNumber": {
+          "type": "string",
+          "description": "Admin payment number that received the funds."
+        },
+        "transactionId": {
+          "type": "string",
+          "description": "Customer-submitted payment Transaction ID (TrxID)."
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer mobile number."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PLACED", "COMPLETED"],
+          "description": "Order status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "offerId",
+        "offerTitle",
+        "price",
+        "buyPrice",
+        "discount",
+        "quantity",
+        "totalPaid",
+        "paymentMethod",
+        "adminPaymentNumber",
+        "transactionId",
+        "customerPhone",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Admin-configured mobile banking payment numbers and instructions.",
+      "type": "object",
+      "properties": {
+        "bkashNumber": {
+          "type": "string",
+          "description": "Admin bKash wallet number."
+        },
+        "nagadNumber": {
+          "type": "string",
+          "description": "Admin Nagad wallet number."
+        },
+        "rocketNumber": {
+          "type": "string",
+          "description": "Admin Rocket wallet number."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Payment instructions displayed to customers."
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Admin UID who updated the payment numbers."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "bkashNumber",
+        "nagadNumber",
+        "rocketNumber",
+        "instructions",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered OfferVault user profile linked to their authenticated UID.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "User full name."
+        },
+        "phone": {
+          "type": "string",
+          "description": "User mobile number."
+        },
+        "division": {
+          "type": "string",
+          "description": "User division or region in Bangladesh."
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["USER", "ADMIN"],
+          "description": "User account role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "fullName",
+        "phone",
+        "division",
+        "email",
+        "role",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/app_config/payment_settings": {
+      "schema": {
+        "$ref": "#/entities/PaymentSettings"
+      },
+      "description": "Admin-managed mobile banking payment numbers for customer checkout."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Registered user profiles for login vs new-user registration."
+    },
+    "/users/{userId}/offers/{offerId}": {
+      "schema": {
+        "$ref": "#/entities/Offer"
+      },
+      "description": "User-scoped drive offer catalog and admin-published offers."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "User-scoped drive offer purchase history with payment TrxID."
+    }
+  }
+}

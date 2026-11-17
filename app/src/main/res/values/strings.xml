@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">OfferVault</string>
+    <string name="nav_deals">Deals</string>
+    <string name="nav_admin">Admin</string>
+    <string name="nav_analyzer">Analyzer</string>
+    <string name="nav_bag">Bag</string>
+    <string name="hero_kicker">CURATED DROPS</string>
+    <string name="hero_title">Smart Offers &amp; Real Savings</string>
+    <string name="search_placeholder">Search offers, brands, or discounts…</string>
+    <string name="filter_saved">Saved</string>
+    <string name="sort_label">Sort</string>
+    <string name="empty_search_title">No matching offers</string>
+    <string name="empty_search_subtitle">Try clearing your search or switching categories to explore all curated deals.</string>
+    <string name="empty_bag_title">Your savings bag is empty</string>
+    <string name="empty_bag_subtitle">Tap + Bag on any offer card to track total price, buy price, and combined discount savings.</string>
+    <string name="browse_offers">Browse Offers</string>
+    <string name="add_to_bag">Add to Bag</string>
+    <string name="share_offer">Share Offer</string>
+    <string name="checkout_cta">Review Savings Summary</string>
+    <string name="analyzer_title">Offer Analyzer</string>
+    <string name="analyzer_subtitle">Calculate buy price, discount %, and compare deals side by side</string>
+</resources>
